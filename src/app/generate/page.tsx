@@ -86,9 +86,14 @@ export default function Generate() {
         ...values,
         token: session?.user?.token as string,
       });
+      console.log("Res: ", res);
       if (res.message == "Success") {
         const resJSON = JSON.parse(res?.itenerary);
-        const cleaned = resJSON.replace(/```json\n|```/g, "").trim();
+console.log("ResJSON: ", resJSON);
+        const content = resJSON?.choices[0]?.message?.content;
+        console.log("Content: ", content);
+        const cleaned = content.replace(/```json\n|```/g, "").trim();
+        console.log("Cleaned: ", cleaned);
         setItinerary(JSON.parse(cleaned));
         console.log("Itinerary: ", itinerary);
       }
@@ -96,9 +101,10 @@ export default function Generate() {
 
       console.log("Data: ", JSON.parse(res?.itenerary));
     } catch (error) {
+      console.log("Error: ", error);
       toast({
         variant: "destructive",
-        description: "Failed to generate itinerary.",
+        description: "Failed to generate itinerary..",
       });
     }
     setLoading(false);
