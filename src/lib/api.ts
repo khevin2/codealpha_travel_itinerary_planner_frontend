@@ -37,12 +37,17 @@ export async function registerUser(user: User) {
     return response.json();
 }
 
-export async function generate({ destinations, startDate, endDate, preference }: { destinations: string, startDate: string, endDate: string, preference: string }) { 
-    return await fetch(`${API_URL}/generate`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ destinations, startDate, endDate, preference }),
+export async function generate({ destinations, startDate, endDate, preference,token }: { destinations: string, startDate: string, endDate: string, preference: string,token:string }) { 
+    const res =  await fetch(`${API_URL}/itineraries/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ destinations, startDate, endDate, preference }),
     });
+    if(!res.ok){
+      throw new Error("An error occurred while generating itinerary");
+    }
+    else return await res.json();
 }

@@ -1,8 +1,6 @@
 "use client";
 
-
 import Header from "@/components/Header";
-import { Session } from "next-auth";
 import { getSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
@@ -26,63 +24,87 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import { useRouter } from "next/navigation";
-import { generate, registerUser } from "@/lib/api";
+import { generate } from "@/lib/api";
+import IteneraryView from "@/components/IteneraryView";
+
+import { Itinerary } from "@/app/generate/IteneraryInterface";
+import { Session } from "next-auth";
 
 const formSchema = z.object({
   destinations: z.string().min(2, {
-    message:
-      "Username must be at least 3 characters.",
+    message: "Destinations cannot be empty.",
   }),
-    startDate: z.string().date("Invalid date"),
+  startDate: z.string().date("Invalid date"),
   endDate: z.string().date("Invalid date"),
   preference: z.string().min(3, {
     message: "Invalid preference.",
   }),
 });
 
+type CustomSession = {
+  user: {
+    email: string;
+    username: string;
+    token: string;
+  };
+  expires: string;
+};
+
 export default function Generate() {
-     const [loading, setLoading] = React.useState(false);
-   
-    const [session, setSession] = useState<Session | null>(null);
-    console.log(session);
-    useEffect(() => { 
-        const fetchSession = async () => {
-            const session = await getSession();
-            setSession(session);
-        }
-        fetchSession();
-    }, [])
-    
-      const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-          destinations: "",
-          startDate: "",
-          
-            endDate: "",
-          preference:""
-        },
+  const [loading, setLoading] = React.useState(false);
+
+  const [session, setSession] = useState<CustomSession | null>(null);
+  console.log("Session: ", session);
+  useEffect(() => {
+    const fetchSession = async () => {
+      const session = (await getSession()) as Session as CustomSession;
+      setSession(session);
+    };
+    fetchSession();
+  }, []);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      destinations: "",
+      startDate: "",
+
+      endDate: "",
+      preference: "",
+    },
+  });
+  console.log("token: ", session?.user?.token);
+
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+
+  const { toast } = useToast();
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setLoading(true);
+    try {
+      const res = await generate({
+        ...values,
+        token: session?.user?.token as string,
       });
-
-     const router = useRouter();
-    
-      const { toast } = useToast();
-    
-      async function onSubmit(values: z.infer<typeof formSchema>) {
-        setLoading(true);
-        const res = await generate(values);
-          if (!res.ok) {
-            console.log(res.json());
-          toast({
-            variant: "destructive",
-            description: "Failed to generate itinerary.",
-          });
-        }
-        router.push("/login");
-        setLoading(false);
+      if (res.message == "Success") {
+        const resJSON = JSON.parse(res?.itenerary);
+        const cleaned = resJSON.replace(/```json\n|```/g, "").trim();
+        setItinerary(JSON.parse(cleaned));
+        console.log("Itinerary: ", itinerary);
       }
+      else throw new Error("Failed to generate itinerary.");
 
+      console.log("Data: ", JSON.parse(res?.itenerary));
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: "Failed to generate itinerary.",
+      });
+    }
+    setLoading(false);
+    console.log("Itinerary: ", itinerary);
+    console.log("Stopped loading");
+  }
 
   return (
     <div className="">
@@ -91,7 +113,7 @@ export default function Generate() {
         <p className="text-2xl">Welcome to travel Itinerary planner.</p>
         <div className="flex justify-center items-center space-x-4 mt-4">
           <div className="flex flex-col justify-center items-center mt-6">
-            <Label>Register</Label>
+            <Label>Fill</Label>
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -102,9 +124,12 @@ export default function Generate() {
                   name="destinations"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>Destinations</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter username" {...field} />
+                        <Input
+                          placeholder="Enter your destinations"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
                         Your destinations separated by commas.
@@ -162,7 +187,7 @@ export default function Generate() {
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="Enter your preference"
+                          placeholder="Enter your preferences"
                           {...field}
                         />
                       </FormControl>
@@ -181,6 +206,7 @@ export default function Generate() {
             </Form>
           </div>
         </div>
+        <IteneraryView itinerary={itinerary} />
       </div>
     </div>
   );

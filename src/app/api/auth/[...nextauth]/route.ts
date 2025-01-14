@@ -74,7 +74,6 @@ const handler = NextAuth({
       return params.token;
     },
     async session({ session, token }) {
-      // Pull user data from the token (instead of `user` directly)
       if (token.user) {
         session.user = token.user as User;
       }
