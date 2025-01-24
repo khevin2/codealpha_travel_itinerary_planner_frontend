@@ -1,6 +1,4 @@
-
-
-
+import { Itinerary } from "@/app/generate/IteneraryInterface";
 type User = {
     username: string;
     email: string;
@@ -50,4 +48,21 @@ export async function generate({ destinations, startDate, endDate, preference,to
       throw new Error("An error occurred while generating itinerary");
     }
     else return await res.json();
+}
+
+export async function saveItinerary({ itinerary, token }: { itinerary: Itinerary, token: string }) {
+    const response = await fetch(`${API_URL}/itineraries/save`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(itinerary),
+    });
+
+    if (!response.ok) {
+        throw new Error("An error occurred while saving itinerary");
+    }
+
+    return response.json();
 }

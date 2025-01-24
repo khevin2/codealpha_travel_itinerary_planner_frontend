@@ -29,6 +29,7 @@ import IteneraryView from "@/components/IteneraryView";
 
 import { Itinerary } from "@/app/generate/IteneraryInterface";
 import { Session } from "next-auth";
+import { CustomSession } from "./CustomSession";
 
 const formSchema = z.object({
   destinations: z.string().min(2, {
@@ -41,14 +42,7 @@ const formSchema = z.object({
   }),
 });
 
-type CustomSession = {
-  user: {
-    email: string;
-    username: string;
-    token: string;
-  };
-  expires: string;
-};
+
 
 export default function Generate() {
   const [loading, setLoading] = React.useState(false);
